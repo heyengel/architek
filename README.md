@@ -5,8 +5,8 @@ Architek is a predictive analytics prototype for buildings.  Using machine learn
 Buildings consume nearly half of all the energy produced and responsible for nearly half of carbon emissions in the United States, significantly more than all the vehicles on the road.  The mechanical and electrical systems of a building approaches 70% of a buildings energy usage.  Currently, these systems are reactive, instead of predictive.
 
 <tr>
-<td> <img src="./images/us_co2_emissions_by_sector_21.png" alt="emissions" style="width: 250px;"/> </td>
-<td> <img src="./images/us_energy_consumption_by_sector_18.png" alt="energy_consumption" style="width: 250px;"/> </td>
+<td> <img src="./images/us_co2_emissions_by_sector_21.png" alt="emissions" style="width: 200px;"/> </td>
+<td> <img src="./images/us_energy_consumption_by_sector_18.png" alt="energy_consumption" style="width: 200px;"/> </td>
 </tr>
 
 ## Goals / Solution
