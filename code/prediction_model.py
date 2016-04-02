@@ -3,48 +3,78 @@ import pandas as pd
 import json
 import forecastio
 import datetime, time
-import glob
-import data_processing
-from sql_helper import db_update
+import data_processing, api_utils
+import cPickle as pickle
+import sql_helper
+import sqlalchemy
 from sklearn.ensemble import RandomForestRegressor
 
-# load API key
-with open('/Users/Engel/api/keys/forecastio-api.json') as f:
-    data = json.load(f)
-    api_key = data['api_key']
+def predict(df_data):
+    '''
+    Generate predictions based on model.
 
-# coordinates for Transamerica Pyramid
-lat = 37.795184
-lng = -122.402764
+    INPUT: dataframe
+    OUTPUT: dataframe with predictions
+    '''
+    df = df_data.copy()
+    X = df.values
 
-# pull weather forecast from API
-print ('Getting weather forecast.')
-forecast = forecastio.load_forecast(api_key, lat, lng)
-timestr = time.strftime("%Y%m%d-%H%M%S")
+    # load model
+    with open('../model/grid_search_model.pkl') as f:
+        model = pickle.load(f)
 
-with open('../data/forecastio/api-pull/' + timestr + '-forecastio.json', 'w') as outfile:
-    json.dump(forecast.json, outfile)
+    df['predict'] = model.predict(X)
+    df['slack'] = 1 - df['predict']
 
-df_daily = pd.DataFrame(forecast.json['daily']['data'])
-df_daily.columns = [x.lower() for x in df_daily.columns]
+    return df
 
-df_daily = df_daily[['apparenttemperaturemax',
- 'apparenttemperaturemin', 'precipintensity',
- 'precipintensitymax',  'pressure', 'temperaturemax',
- 'temperaturemin', 'time', 'windspeed']]
+if __name__ == '__main__':
 
-# update SQL database
-colnames = ['apparenttemperaturemax', 'apparenttemperaturemin',
-           'precipintensity', 'precipintensitymax', 'pressure',
-           'temperaturemax', 'temperaturemin', 'time', 'windspeed']
+    #insert forecast.io API key path here
+    forecastio_key_path = '../../api/keys/forecastio-api.json'
 
-sql_helper.db_update(df_daily, colnames)
+    # load API key
+    api_key = api_utils.load_api_key(forecastio_key_path)
 
-#load forecast from database
-df_predict_import = pd.read_sql('''SELECT *
-                                   FROM forecast_daily
-                                   ORDER BY time DESC LIMIT 45''', con=engine)
+    # coordinates for Transamerica Pyramid
+    lat = 37.795184
+    lng = -122.402764
 
-df_predict = data_processing.clean_data(df_predict_import)
+    # pull weather forecast from API
+    print ('Getting weather forecast.')
+    forecast = forecastio.load_forecast(api_key, lat, lng)
+    timestr = time.strftime("%Y%m%d-%H%M%S")
 
-df = data_processing.predict(df_predict)
+    with open('../data/forecastio/api-pull/' + timestr + '-forecastio.json', 'w') as outfile:
+        json.dump(forecast.json, outfile)
+
+    df_daily = pd.DataFrame(forecast.json['daily']['data'])
+    df_daily.columns = [x.lower() for x in df_daily.columns]
+
+    # specify columns/features to keep
+    colnames = ['apparenttemperaturemax', 'apparenttemperaturemin',
+               'precipintensity', 'precipintensitymax', 'pressure',
+               'temperaturemax', 'temperaturemin', 'time', 'windspeed']
+
+    #update dataframe with specified features
+    df_daily = df_daily[colnames]
+
+    # update SQL database
+    sql_helper.db_update(df_daily, colnames)
+
+    #load forecast from database
+    engine = sqlalchemy.create_engine("postgres://postgres@/forecast")
+    conn = engine.connect()
+    df_predict_import = pd.read_sql('''SELECT *
+                                       FROM forecast_daily
+                                       ORDER BY time DESC LIMIT 45''', con=engine)
+    conn.close()
+    engine.dispose()
+
+    df_predict = data_processing.clean_data(df_predict_import,
+                                features=['dayofweek', 'holiday', 'dayofyear',
+                                        'pressure', 'apparenttemperaturemin-3'])
+
+    df = predict(df_predict)
+    print 'Predictions:'
+    print df

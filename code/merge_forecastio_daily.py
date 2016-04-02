@@ -1,10 +1,13 @@
 import numpy as np
 import pandas as pd
-import glob, boto3, json
+import glob, boto3
 import merge_data
+import data_processing, api_utils
 import sql_helper
 import sqlalchemy
 
+#insert forecast.io API key path here
+aws_key_path = '../../api/keys/heyengel-aws.json'
 
 # collect filenames
 path =r'../data/forecastio/daily/'
@@ -36,10 +39,7 @@ engine.dispose()
 sql_helper.db_setkey('forecast', 'time')
 
 # save to Amazon S3 bucket
-with open('/users/engel/api/keys/heyengel-aws.json') as f:
-    data = json.load(f)
-    access_key = data['access-key']
-    secret_access_key = data['secret-access-key']
+access_key, secret_access_key = api_utils.load_aws_key(aws_key_path)
 
 session = boto3.session.Session(aws_access_key_id=access_key,
                                 aws_secret_access_key=secret_access_key,

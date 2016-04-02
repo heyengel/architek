@@ -1,4 +1,6 @@
+import pandas as pd
 import psycopg2
+from sqlalchemy import create_engine
 
 def db_setkey(database, key_col):
     '''
@@ -33,3 +35,17 @@ def db_update(df, colnames, passwd=None):
     cur.close()
 
 # check pyscopg2 docs 'SQL injection'
+
+def db_load_weather():
+    '''
+    Load from SQL database and return dataframe.
+
+    INPUT: dataframe, list, string
+    OUTPUT: dataframe
+    '''
+    engine = create_engine("postgres://postgres@/forecast")
+    conn = engine.connect()
+    df_forecast = pd.read_sql("SELECT * FROM forecast_daily", con=engine)
+    conn.close()
+    engine.dispose()
+    return df_forecast

@@ -1,15 +1,11 @@
 import numpy as np
 import pandas as pd
-import json
 import matplotlib.pyplot as plt
 import datetime, time
 import boto3
-import data_processing
+import data_processing, api_utils, sql_helper
 import cPickle as pickle
-from data_processing import clean_data
 from time import time
-from scipy.stats import scoreatpercentile
-from sqlalchemy import create_engine
 from operator import itemgetter
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.grid_search import GridSearchCV
@@ -17,8 +13,10 @@ from sklearn.grid_search import GridSearchCV
 #insert AWS key path here
 aws_key_path = '../../api/keys/heyengel-aws.json'
 
-# Utility function to report best scores
 def report(grid_scores, n_top=3):
+    '''
+    Utility function to report best scores from grid search.
+    '''
     top_scores = sorted(grid_scores, key=itemgetter(1), reverse=True)[:n_top]
     for i, score in enumerate(top_scores):
         print("Model with rank: {0}".format(i + 1))
@@ -34,46 +32,18 @@ if __name__ == '__main__':
     print ('Loading BART data.')
     df_bart_import = pd.read_pickle('../data/bart/df_bart_hourly.pkl')
     df_bart_hourly = df_bart_import.copy()
-
-    # filter exits counts from 5am-11am
-    df_bart = df_bart_hourly.ix[datetime.time(5):datetime.time(11)]
-
-    # combine to daily counts
-    df_bart = df_bart.resample('1D', how={'counts': np.sum})
-
-    # trim upper outliers 99 percentile
-    upper_limit = df_bart.counts > scoreatpercentile(df_bart.counts, 99)
-    df_bart[df_bart.counts > scoreatpercentile(df_bart.counts, 99)] = scoreatpercentile(df_bart.counts, 99)
-
-    # low outliers
-    lower_limit = (df_bart.counts.isnull()) | (df_bart.counts < 4000)
-    impute_dict = {'2012-10-31': 100000, '2011-10-15': 25000, '2011-10-16': 12000, '2011-11-05': 25000,
-    '2011-12-25': 4000, '2012-11-03': 12000, '2012-12-25': 4000,
-    '2013-07-01': 95000, '2013-07-02': 95000, '2013-07-03': 90000,
-    '2013-07-04': 13000, '2013-07-05': 18000, '2013-10-18': 85000,
-    '2013-10-19': 25000, '2013-10-20': 12000, '2013-10-21': 92000}
-    for key, val in impute_dict.iteritems():
-        df_bart.ix[key]['counts'] = val
-
-    # normalize bart counts and detrend
-    xx = np.arange(1826) # 1826 days
-    yy = 80000 + xx * 18.5 # equation based on growth trend
-    df_bart['counts_normed'] = (df_bart.counts - df_bart.counts.min()) / (yy - df_bart.counts.min())
+    df_bart = data_processing.clean_data_bart(df_bart_hourly)
 
     # load forecast.io data from SQL database
     print ('Loading weather data.')
-    engine = create_engine("postgres://postgres@/forecast")
-    conn = engine.connect()
-    df_forecast = pd.read_sql("SELECT * FROM forecast_daily", con=engine)
-    conn.close()
-    engine.dispose()
+    df_forecast = sql_helper.db_load_weather()
 
-    df = clean_data(df_forecast)
+    df = data_processing.clean_data(df_forecast,
+                                features=['dayofweek', 'holiday', 'dayofyear',
+                                        'pressure', 'apparenttemperaturemin-3'])
 
     # assign X and y values for model
     df_train = df.copy()
-    df_train = df_train[['dayofweek', 'holiday', 'dayofyear',
-                        'pressure', 'apparenttemperaturemin-3']]
     y = df_bart['20110101':'20151231'].counts_normed.values
     X = df_train['20110101':'20151231'].values
 
@@ -104,11 +74,8 @@ if __name__ == '__main__':
             pickle.dump(model, f)
     print ('Saved model locally.')
 
-    # save model to AWS S3
-    with open(aws_key_path) as f:
-        data = json.load(f)
-        access_key = data['access-key']
-        secret_access_key = data['secret-access-key']
+    # save to Amazon S3 bucket
+    access_key, secret_access_key = api_utils.load_aws_key(aws_key_path)
 
     session = boto3.session.Session(aws_access_key_id=access_key,
                                     aws_secret_access_key=secret_access_key,
