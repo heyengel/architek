@@ -1,4 +1,4 @@
-# Architek: predictive analytics and machine learning for buildings
+# Architek: predictive analytics for buildings
 Architek is a predictive analytics prototype for buildings.  Using machine learning, historical user and weather data, the prediction model provides advance information to the building management system (BMS), allowing the building to better manage resources and anticipate occupant load demands, which reduces energy consumption, reduce operating costs and provides healthier indoor environments.
 
 ## Motivation
@@ -10,15 +10,13 @@ Buildings consume nearly half of all the energy produced and responsible for nea
 Reduce building energy consumption, reduce operating costs and provide healthier indoor environments with increased use of natural ventilation. Understand time series correlations between weather and building occupancy data to predict future short term demand.  I believe that significant cost and energy can be saved if the building automation system is able to anticipate demand.
 
 ## Approach
-There are two main factors that determine heating and cooling loads: the temperature outside and the number of occupants inside.
-
-A few hours before we all arrive for work in the morning, a building typically starts up and pre-heats or pre-cools our workspace.  It does this without knowing how many people are coming to work and what temperature it will be outside.
+There are two main factors that determine heating and cooling loads: the temperature outside and the number of occupants inside. A few hours before we all arrive for work in the morning, a building typically starts up and pre-heats or pre-cools our workspace.  It does this without knowing how many people are coming to work and what temperature it will be outside.
 
 What if buildings knew this information ahead of time?  Based on consultations with energy experts, we can save energy if the building was more proactive with advanced predicted data.
 
 <img src=images/weather-occupancy.png width=600 />
 
-For this high-level approach, BART data will be used to infer the percentage of people going to work in downtown San Francisco.   Weather data will also be used to see if it affects work attendance.
+For this high-level approach, BART data was used to infer the percentage of people going to work in downtown San Francisco.  Weather data will also be used to determine if it affects work attendance.
 
 <img src=images/bart-weather.png width=600 />
 
