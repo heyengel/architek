@@ -40,7 +40,7 @@ def db_load_weather():
     '''
     Load from SQL database and return dataframe.
 
-    INPUT: dataframe, list, string
+    INPUT: string
     OUTPUT: dataframe
     '''
     engine = create_engine("postgres://postgres@/forecast")
