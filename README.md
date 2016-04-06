@@ -65,4 +65,15 @@ This project demonstrates the potential benefits of predictive analytics in our 
 
 <img src=images/future-work.png width=600 />
 
+## Toolbox
+<dl class="dl-horizontal">
+  <dt>Python</dt> <dd>scripting language that you can <a href="https://www.explainxkcd.com/wiki/images/f/fd/python.png">fly with</a></dd>
+  <dt>Pandas</dt> <dd>exploratory data analysis, data wrangling</dd>
+  <dt>Sci-kit Learn</dt> <dd>machine learning</dd>
+  <dt>Numpy/Matplotlib</dt> <dd>cross correlation time series analysis</dd>
+  <dt>Postgres</dt> <dd>SQL database</dd>
+  <dt>Psycopg2</dt> <dd>SQL database adapter for python</dd>
+  <dt>Flask-Bootstrap</dt> <dd>web app framework</dd>
+  <dt>AWS</dt> <dd>host web app, cloud data storage</dd>
+
 <img src=images/logo.png width=250 />
