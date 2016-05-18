@@ -2,14 +2,14 @@ import pandas as pd
 import psycopg2
 from sqlalchemy import create_engine
 
-def db_setkey(database, key_col):
+def db_setkey(database_name, table_name, column_name):
     '''
     set primary database key.
     '''
-    con = psycopg2.connect(database=database, user='postgres')
+    con = psycopg2.connect(database=database_name, user='postgres')
     cur = con.cursor()
 
-    cur.execute('ALTER TABLE forecast_daily ADD PRIMARY KEY (%s);' % (key_col))
+    cur.execute('ALTER TABLE {} ADD PRIMARY KEY ({});'.format(table_name, column_name))
 
     con.commit()
     cur.close()
